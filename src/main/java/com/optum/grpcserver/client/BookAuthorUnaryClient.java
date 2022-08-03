@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.optum.grpcserver.Author;
 import com.optum.grpcserver.BookAuthorServiceGrpc;
-import com.optum.grpcserver.BookAuthorServiceGrpc.BookAuthorServiceBlockingStub;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;

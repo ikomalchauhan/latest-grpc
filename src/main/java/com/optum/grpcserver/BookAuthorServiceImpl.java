@@ -1,6 +1,5 @@
 package com.optum.grpcserver;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,14 +31,14 @@ public class BookAuthorServiceImpl extends BookAuthorServiceImplBase {
 	@Override
 	public StreamObserver<Book> getExpensiveBook(StreamObserver<Cart> responseObserver) {
 		return new StreamObserver<Book>() {
-			ArrayList<Book> bookCart = new ArrayList<Book>();
+			float price;
+			int totalPages;
 
 			@Override
 			public void onNext(Book book) {
 				System.out.println("Book with title: " + book.getTitle());
-				for (Book tempBook : TempDB.getBooksFromTempDb()) {
-					bookCart.add(tempBook);
-				}
+				price += book.getPrice();
+				totalPages += book.getPages();
 			}
 
 			@Override
@@ -49,20 +48,35 @@ public class BookAuthorServiceImpl extends BookAuthorServiceImplBase {
 
 			@Override
 			public void onCompleted() {
-				float cartValue = 0;
-				for (Book tempBook : bookCart) {
-					cartValue += tempBook.getPrice();
-				}
-
-				responseObserver.onNext(Cart.newBuilder().setPrice((int) cartValue).setBooks(bookCart.size()).build());
+				System.err.println("Cart Value: " + price + "; Book Pages: " + totalPages);
+				responseObserver.onNext(Cart.newBuilder().setPrice((int) price).setBooks(totalPages).build());
 				responseObserver.onCompleted();
 			}
 		};
 	}
 
-//	@Override
-//	public StreamObserver<Book> getBooksByGender(StreamObserver<Book> responseObserver) {
-//		
-//	}
+	@Override
+	public StreamObserver<Book> getBooksByGender(StreamObserver<Cart> responseObserver) {
+		return new StreamObserver<Book>() {
+
+			@Override
+			public void onNext(Book book) {
+				System.out.println("Book with title: " + book.getTitle());
+				System.err.println("Cart Value: " + book.getPrice() + "; Book Pages: " + book.getPages());
+				responseObserver
+						.onNext(Cart.newBuilder().setPrice((int) book.getPrice()).setBooks(book.getPages()).build());
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				System.err.println("Error while reading book streaming: " + t);
+			}
+
+			@Override
+			public void onCompleted() {
+				responseObserver.onCompleted();
+			}
+		};
+	}
 
 }

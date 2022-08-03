@@ -1,6 +1,7 @@
 package com.optum.grpcserver.client;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import com.optum.grpcserver.Book;
@@ -12,13 +13,11 @@ import com.optum.grpcserver.TempDB;
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 public class BookAuthorClientStreamingClient {
 
 	private final BookAuthorServiceStub stub;
-	private boolean serverResponseCompleted = false;
 	private StreamObserver<Book> streamClientSender = null;
 
 	public BookAuthorClientStreamingClient(Channel channel) {
@@ -36,7 +35,6 @@ public class BookAuthorClientStreamingClient {
 			@Override
 			public void onCompleted() {
 				System.out.println("Server: Done ordering cart");
-				serverResponseCompleted = true;
 			}
 
 			@Override
@@ -50,22 +48,23 @@ public class BookAuthorClientStreamingClient {
 
 	public void addBook(Book book) {
 //		Book request = Book.newBuilder().setTitle(book).build();
-
+		Random random = new Random();
 		if (streamClientSender == null) {
 			streamClientSender = stub.getExpensiveBook(getServerResponseObserver());
 		}
 		try {
 			System.out.println("Adding book with title starting with: " + book);
 			streamClientSender.onNext(book);
-		} catch (StatusRuntimeException e) {
-			System.err.println("RPC failed: " + e.getStatus());
+			Thread.sleep(random.nextInt(1000) + 500);
+		} catch (Exception e) {
+			System.err.println("RPC failed: " + e.getMessage());
 		}
 	}
 
 	public void completeOrder() {
-		if(streamClientSender != null) {
+		if (streamClientSender != null) {
 			System.out.println("Done, waiting for server to create order summary...");
-			streamClientSender.onCompleted();			
+			streamClientSender.onCompleted();
 		}
 	}
 
@@ -81,7 +80,7 @@ public class BookAuthorClientStreamingClient {
 			}
 			client.completeOrder();
 		} finally {
-//			channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+			channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
 		}
 	}
 
